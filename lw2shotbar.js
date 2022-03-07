@@ -92,28 +92,14 @@ function draw() {
     })
 
     // Textual output
-    // document.getElementById("output-crit").innerHTML = "Crit: " + 100 * shotbars[explainPage]["crit"];
-    // document.getElementById("output-hit").innerHTML = "Normal hit: " + 100 * shotbars[explainPage].hit;
-    // document.getElementById("output-graze").innerHTML = "Graze: " + 100 * shotbars[explainPage].graze;
-    // document.getElementById("output-miss").innerHTML = "Miss: " + 100 * shotbars[explainPage].miss;
-    
     internalNames = ["crit", "hit", "graze", "miss"];
     userNames = ["Crit", "Normal hit", "Graze", "Miss"];
-    
     for (i = 0; i<4; ++i){
         document.getElementById("output-" + internalNames[i]).innerHTML = userNames[i] + ": " + (100 * shotbars[explainPage][internalNames[i]]).toFixed(3) + "%"
     }
 
-    // [{internal: "crit", user: "Crit"},
-    //     {internal: "hit", user: "Normal hit"},
-    //     {internal: "graze", user: "Graze"},
-    //     {internal: "miss", user: "Miss"}].forEach(
-    //     (name) => {
-    //         console.log("output-" + name.internal)
-    //         document.getElementById("output-" + name.internal).innerHTML = name.user + ": " + 100 * shotbars[explainPage][name.internal]
-    //     }
-    // )
 
+    // Render
     vis = {width: 0.6*canvas.width, height: canvas.height, left: 0.2*canvas.width};
 
     context.fillStyle="#878700";
