@@ -7,6 +7,15 @@
       .input {
         width: 4em;
       }
+
+      p {
+        text-align: center;
+      }
+      
+      ui {
+        display: list-item;
+        list-style-type: square;
+      }
     </style>
   </head>
   <body>
@@ -14,47 +23,36 @@
       <p>
         <span>
           Aim
-          <input type="number" class="input" id="input-aim" value=65>
+          <input type="number" class="input" id="input-aim" min=0 value=65>
         </span>
         <span>
           Crit
-          <input type="number" class="input" id="input-crit" value=0>
+          <input type="number" class="input" id="input-crit" max=100 value=0>
         </span>
         <span>
           Dodge
-          <input type="number" class="input" id="input-dodge" value=0>
+          <input type="number" class="input" id="input-dodge" max=100 value=0>
         </span>
         <span>
           Graze band
-          <input type="number" class="input" id="input-grazeband" value=10>
+          <input type="number" class="input" id="input-grazeband" min=0 max=100 value=10>
         </span>
+        <br>
+      </p>
+      <p>
+        <button id="breakdown-toggle"></button>
       </p>
     </div>
-    <div>
+    <div id="breakdown" class="breakdown">
+    </div>
+    <div id="render">
       <canvas id="shotbar"></canvas>
     </div>
-    <div id="output" style="text-align: center">
+    <div id="output">
       <p id="output-crit"></p>
       <p id="output-hit"></p>
       <p id="output-graze"></p>
       <p id="output-miss"></p>
-    </div>
-
-    <div id="breakdown" style="text-align: center">
-      <p>
-        <button id="breakdown-prev" class="breakdown"><<</button>
-        <button id="breakdown-toggle">Explain</button>
-        <button id="breakdown-next" class="breakdown">>></button>
-      </p>
-      <p class="breakdown breakdown-page" id="breakdown-0">
-        [1/3] The initial chance to hit is equal to your Aim.
-      </p>
-      <p class="breakdown breakdown-page" id="breakdown-1">
-        [2/3] Apply the Graze band.
-      </p>
-      <p class="breakdown breakdown-page" id="breakdown-2">
-        [3/3] Apply the upgrades and downgrades.
-      </p>
     </div>
   </body>
 </html>
