@@ -3,6 +3,7 @@ window.onload = function() {
 
     document.querySelectorAll(".input").forEach((elem) => { addEventListener("change", draw) })
     document.getElementById("breakdown-toggle").addEventListener("click", toggleExplain)
+    window.addEventListener("resize", draw)
 
     toggleExplain();
 }
