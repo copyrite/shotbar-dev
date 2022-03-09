@@ -163,20 +163,6 @@ function draw() {
     }
 
 
-    // Render breakdown
-    vis = {width: 0.6*canvas.width, height: canvas.height, left: 0.2*canvas.width};
-    var context = canvas.getContext("2d");
-    context.clearRect(0, 0, canvas.width, canvas.height);
-
-    context.fillStyle="#878700";
-    context.fillRect(vis.left, 0, vis.width*lastBar.crit, 10);
-
-    context.fillStyle="#870000";
-    context.fillRect(vis.left + vis.width*lastBar.crit, 0, vis.width*lastBar.hit, 10);
-
-    context.fillStyle="#008700";
-    context.fillRect(vis.left + vis.width*(lastBar.crit + lastBar.hit), 0, vis.width*lastBar.graze, 10);
-
-    context.fillStyle="#878787";
-    context.fillRect(vis.left + vis.width*(lastBar.crit + lastBar.hit + lastBar.graze), 0, vis.width*lastBar.miss, 10);
+    // Render final shotbar
+    drawBar(document.getElementById("shotbar"), lastBar);
 };
