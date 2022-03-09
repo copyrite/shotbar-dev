@@ -23,7 +23,7 @@ function toggleExplain() {
 }
 
 function clamp(x){
-    return Math.max(0, Math.min(1, x));
+    return Math.max(0, Math.min(100, x));
 }
 
 function drawBar(canvas, shotbar) {
@@ -35,16 +35,16 @@ function drawBar(canvas, shotbar) {
     var context = canvas.getContext("2d");
 
     context.fillStyle="#878700";
-    context.fillRect(vis.left, 0, vis.width*shotbar.crit, 10);
+    context.fillRect(vis.left, 0, vis.width*shotbar.crit/100, 10);
 
     context.fillStyle="#870000";
-    context.fillRect(vis.left + vis.width*shotbar.crit, 0, vis.width*shotbar.hit, 10);
+    context.fillRect(vis.left + vis.width*shotbar.crit/100, 0, vis.width*shotbar.hit/100, 10);
 
     context.fillStyle="#008700";
-    context.fillRect(vis.left + vis.width*(shotbar.crit + shotbar.hit), 0, vis.width*shotbar.graze, 10);
+    context.fillRect(vis.left + vis.width*(shotbar.crit + shotbar.hit)/100, 0, vis.width*shotbar.graze/100, 10);
 
     context.fillStyle="#878787";
-    context.fillRect(vis.left + vis.width*(shotbar.crit + shotbar.hit + shotbar.graze), 0, vis.width*shotbar.miss, 10);
+    context.fillRect(vis.left + vis.width*(shotbar.crit + shotbar.hit + shotbar.graze)/100, 0, vis.width*shotbar.miss/100, 10);
     return canvas;
 }
 
@@ -58,10 +58,10 @@ function draw() {
     breakdownDiv.innerHTML = ""
 
     // Inputs
-    aim = clamp(parseInt(document.getElementById("input-aim").value)/100);
-    crit = parseInt(document.getElementById("input-crit").value)/100;
-    dodge = parseInt(document.getElementById("input-dodge").value)/100;
-    grazeband = parseInt(document.getElementById("input-grazeband").value)/100;
+    aim = clamp(parseInt(document.getElementById("input-aim").value));
+    crit = parseInt(document.getElementById("input-crit").value);
+    dodge = parseInt(document.getElementById("input-dodge").value);
+    grazeband = parseInt(document.getElementById("input-grazeband").value);
 
 
     shotbars = [];
@@ -71,7 +71,7 @@ function draw() {
         "crit": 0,
         "hit": aim,
         "graze": 0,
-        "miss": 1 - aim,
+        "miss": 100 - aim,
     };
     shotbars.push(initial);
 
@@ -92,7 +92,7 @@ function draw() {
             if (initial.hit < grazeband){
                 helpText = "The graze band is applied equally on both sides around Aim. Because the chance to hit is low, the size of graze band is only equal to Aim:";
             }
-            else if (1 - initial.hit < grazeband){
+            else if (100 - initial.hit < grazeband){
                 helpText = "The graze band is applied equally on both sides around Aim. Because the chance to miss is low, the size of graze band is only equal to miss chance:";
             }
             else {
@@ -101,10 +101,10 @@ function draw() {
             breakdownDiv.appendChild(document.createElement("p")).innerHTML = helpText;
 
             banded = {"crit": 0};
-            half_bandwidth = Math.min(grazeband, initial.hit, 1-initial.hit);
+            half_bandwidth = Math.min(grazeband, initial.hit, 100-initial.hit);
             banded.hit = initial.hit - half_bandwidth;
             banded.graze = 2*half_bandwidth;
-            banded.miss = 1 - banded.hit - banded.graze;
+            banded.miss = 100 - banded.hit - banded.graze;
             shotbars.push(banded);
 
             breakdownDiv.appendChild(drawBar(document.createElement("canvas"), banded));
@@ -113,8 +113,8 @@ function draw() {
 
 
     // Promotion and demotion
-    promote = crit*(1 - dodge);
-    demote = (1 - crit)*dodge;
+    promote = crit/100*(1 - dodge/100);
+    demote = (1 - crit/100)*dodge/100;
     neutral = 1 - promote - demote;
 
     if (neutral == 1){
@@ -159,7 +159,7 @@ function draw() {
     internalNames = ["crit", "hit", "graze", "miss"];
     userNames = ["Crit", "Normal hit", "Graze", "Miss"];
     for (i = 0; i < 4; ++i){
-        document.getElementById("output-" + internalNames[i]).innerHTML = userNames[i] + ": " + (100 * lastBar[internalNames[i]]).toFixed(3) + "%"
+        document.getElementById("output-" + internalNames[i]).innerHTML = userNames[i] + ": " + (lastBar[internalNames[i]]).toFixed(3) + "%"
     }
 
 
