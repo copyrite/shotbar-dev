@@ -115,15 +115,15 @@ function draw() {
 
 
     // Promotion and demotion
-    promote = crit/100*(1 - dodge/100);
-    demote = (1 - crit/100)*dodge/100;
-    neutral = 1 - promote - demote;
+    promote = crit*(100 - dodge)/100;
+    demote = (100 - crit)*dodge/100;
+    neutral = 100 - promote - demote;
 
     promoted = {
-        "crit": promote*banded.hit,
-        "hit": neutral*banded.hit + promote*banded.graze,
-        "graze": neutral*banded.graze + demote*banded.hit,
-        "miss": banded.miss + demote*banded.graze,
+        "crit": promote*banded.hit/100,
+        "hit": (neutral*banded.hit + promote*banded.graze)/100,
+        "graze": (neutral*banded.graze + demote*banded.hit)/100,
+        "miss": banded.miss + demote*banded.graze/100,
     }
     shotbars.push(promoted)
 
@@ -142,9 +142,9 @@ function draw() {
             </ul>
             Promotion/demotion chances are:
             <ul>
-            <ui>${(100*promote).toFixed(3)}% to promote (Successful Crit roll and failed Dodge roll)
-            <ui>${(100*demote).toFixed(3)}% to demote (Failed Crit roll and successful Dodge roll)
-            <ui>${(100*neutral).toFixed(3)}% to remain the same (Crit roll and Dodge roll both succeed, or both fail)
+            <ui>${(promote).toFixed(3)}% to promote (Successful Crit roll and failed Dodge roll)
+            <ui>${(demote).toFixed(3)}% to demote (Failed Crit roll and successful Dodge roll)
+            <ui>${(neutral).toFixed(3)}% to remain the same (Crit roll and Dodge roll both succeed, or both fail)
             </ul>`
 
         }
