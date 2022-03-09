@@ -80,6 +80,12 @@ function draw() {
 
 
     // Apply graze band
+    half_bandwidth = Math.min(grazeband, initial.hit, 100-initial.hit);
+    banded = {"crit": 0};
+    banded.hit = initial.hit - half_bandwidth;
+    banded.graze = 2*half_bandwidth;
+    banded.miss = 100 - banded.hit - banded.graze;
+    shotbars.push(banded);
     if (grazeband > 0) {
         if (initial.hit == 0) {
             breakdownDiv.appendChild(document.createElement("p")).innerHTML = "Graze band would be applied here, but zero Aim has eliminated it completely."
@@ -100,13 +106,9 @@ function draw() {
             }
             breakdownDiv.appendChild(document.createElement("p")).innerHTML = helpText;
 
-            banded = {"crit": 0};
-            half_bandwidth = Math.min(grazeband, initial.hit, 100-initial.hit);
-            banded.hit = initial.hit - half_bandwidth;
-            banded.graze = 2*half_bandwidth;
-            banded.miss = 100 - banded.hit - banded.graze;
-            shotbars.push(banded);
+        }
 
+        if (initial.hit != banded.hit || initial.miss != banded.miss){
             breakdownDiv.appendChild(drawBar(document.createElement("canvas"), banded));
         }
     }
@@ -116,6 +118,14 @@ function draw() {
     promote = crit/100*(1 - dodge/100);
     demote = (1 - crit/100)*dodge/100;
     neutral = 1 - promote - demote;
+
+    promoted = {
+        "crit": promote*banded.hit,
+        "hit": neutral*banded.hit + promote*banded.graze,
+        "graze": neutral*banded.graze + demote*banded.hit,
+        "miss": banded.miss + demote*banded.graze,
+    }
+    shotbars.push(promoted)
 
     if (neutral == 1){
         breakdownDiv.appendChild(document.createElement("p")).innerHTML = "Hit promotion and demotion would be applied here, but both attacker crit and target dodge are zero."
@@ -139,19 +149,6 @@ function draw() {
 
         }
 
-        prev = shotbars[shotbars.length-1]
-        shotbars.push({
-            "crit": promote*prev.hit,
-            "hit": neutral*prev.hit + promote*prev.graze,
-            "graze": neutral*prev.graze + demote*prev.hit,
-            "miss": prev.miss + demote*prev.graze,
-        })
-        promoted = {
-            "crit": promote*prev.hit,
-            "hit": neutral*prev.hit + promote*prev.graze,
-            "graze": neutral*prev.graze + demote*prev.hit,
-            "miss": prev.miss + demote*prev.graze,
-        }
     }
 
     lastBar = shotbars[shotbars.length-1]
