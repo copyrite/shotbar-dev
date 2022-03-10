@@ -115,41 +115,48 @@ function draw() {
     }
 
 
-    // Promotion and demotion
-    promote = crit*(100 - dodge)/100;
-    demote = (100 - crit)*dodge/100;
-    neutral = 100 - promote - demote;
-
+    // Promotion
+    promote = Math.min(crit - Math.min(0, dodge), 100); // Negative dodge is additional crit
     promoted = {
         "crit": promote*banded.hit/100,
-        "hit": (neutral*banded.hit + promote*banded.graze)/100,
-        "graze": (neutral*banded.graze + demote*banded.hit)/100,
-        "miss": banded.miss + demote*banded.graze/100,
+        "hit": banded.hit + promote*(banded.graze - banded.hit)/100,
+        "graze": banded.graze - promote*banded.graze/100,
     }
+    promoted.miss = 100 - promoted.crit - promoted.hit - promoted.graze
     shotbars.push(promoted)
 
-    if (neutral == 1){
-        breakdownDiv.appendChild(document.createElement("p")).innerHTML = "Hit promotion and demotion would be applied here, but both attacker crit and target dodge are zero."
+    if (promote == 0){
+        breakdownDiv.appendChild(document.createElement("p")).innerHTML = "Hit promotion would be applied here, but Crit is zero and Dodge is not negative."
     }
     else {
-        if ([promote, demote, neutral].some((elem) => (elem < 0))){
-            breakdownDiv.appendChild(document.createElement("p")).innerHTML = "Hit promotion and demotion are applied. One of the chances is negative, which is valid in-game but this calculator doesn't yet adequately explain that.";
+        if (dodge >= 0){
+            breakdownDiv.appendChild(document.createElement("p")).innerHTML = "Crit promotes normal hits into crits and grazes into normal hits."
+        }
+        else if (crit <= 0){
+            breakdownDiv.appendChild(document.createElement("p")).innerHTML = "Negative Dodge acts like crit, promoting normal hits into crits and grazes into normal hits."
         }
         else {
-            breakdownDiv.appendChild(document.createElement("p")).innerHTML = `Hit promotion and demotion are applied:
-            <ul>
-            <ui>A normal hit can be promoted into a crit and demoted into a graze</ui>
-            <ui>A graze can be promoted into a normal hit and demoted into a miss</ui>
-            </ul>
-            Promotion/demotion chances are:
-            <ul>
-            <ui>${(promote).toFixed(3)}% to promote (Successful Crit roll and failed Dodge roll)
-            <ui>${(demote).toFixed(3)}% to demote (Failed Crit roll and successful Dodge roll)
-            <ui>${(neutral).toFixed(3)}% to remain the same (Crit roll and Dodge roll both succeed, or both fail)
-            </ul>`
-
+            breakdownDiv.appendChild(document.createElement("p")).innerHTML = "Crit and negative Dodge are added together, promoting normal hits into crits and grazes into normal hits."
         }
+        breakdownDiv.appendChild(drawBar(document.createElement("canvas"), promoted));
+    }
 
+    // Demotion
+    demote = Math.min(Math.max(dodge, 0), 100);
+    demoted = {
+        "crit": (100 - demote)*promoted.crit/100,
+        "hit": promoted.hit + demote*(promoted.crit - promoted.hit)/100,
+        "graze": promoted.graze + demote*(promoted.hit - promoted.graze)/100,
+    }
+    demoted.miss = 100 - demoted.crit - demoted.hit - demoted.graze
+    shotbars.push(demoted)
+
+    if (demote == 0){
+        breakdownDiv.appendChild(document.createElement("p")).innerHTML = "Hit demotion would be applied here, but Dodge is not positive."
+    }
+    else {
+        breakdownDiv.appendChild(document.createElement("p")).innerHTML = "Dodge demotes Crits into normal hits, normal hits into grazes, and grazes into misses.";
+        breakdownDiv.appendChild(drawBar(document.createElement("canvas"), demoted));
     }
 
     lastBar = shotbars[shotbars.length-1]
