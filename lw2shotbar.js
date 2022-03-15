@@ -1,9 +1,11 @@
-window.onload = function() {
-    document.querySelectorAll(".input").forEach((elem) => { addEventListener("change", draw) })
-    window.addEventListener("resize", draw)
+window.onload = function () {
+    document.querySelectorAll(".input").forEach((elem) => {
+        addEventListener("change", draw);
+    });
+    window.addEventListener("resize", draw);
 
-    toggleExplain();
-}
+    draw();
+};
 
 function clamp(x){
     return Math.max(0, Math.min(100, x));
