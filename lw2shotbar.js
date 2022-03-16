@@ -42,8 +42,6 @@ function draw() {
         {"value": 0, color: "#008700", text: "Graze"},
         {"value": 100 - aim, color: "#878787", text: "Miss"},
     ]
-    d3.cumsum([0].concat(initial.slice(0, 3)), elem => elem.value)
-        .forEach((elem, i) => {initial[i].x = elem;});
     shotbars.push(initial);
 
     breakdownDiv.appendChild(document.createElement("p")).innerHTML = "The initial chance to hit is based on Aim:";
@@ -61,8 +59,6 @@ function draw() {
     banded.push({"value": 2*halfBandwidth, color: "#008700", text: "Graze"});
     banded.push({"value": 100 - banded[0].value - banded[1].value - banded[2].value, color: "#878787", text: "Miss"});
 
-    d3.cumsum([0].concat(banded.slice(0, 3)), elem => elem.value)
-        .forEach((elem, i) => {banded[i].x = elem;})
     shotbars.push(banded);
 
     if (grazeband > 0) {
@@ -99,8 +95,6 @@ function draw() {
     promoted.push({"value": banded[2].value - promote*banded[2].value/100, color: "#008700", text: "Graze"});
     promoted.push({"value": 100 - promoted[0].value - promoted[1].value - promoted[2].value, color: "#878787", text: "Miss"});
 
-    d3.cumsum([0].concat(promoted.slice(0, 3)), elem => elem.value)
-        .forEach((elem, i) => {promoted[i].x = elem;});
     shotbars.push(promoted);
 
     if (promote == 0){
@@ -129,8 +123,6 @@ function draw() {
     demoted.push({"value": promoted[1].value + demote*(promoted[0].value - promoted[1].value)/100, color: "#870000", text: "Normal hit"})
     demoted.push({"value": promoted[2].value + demote*(promoted[1].value - promoted[2].value)/100, color: "#008700", text: "Graze"})
     demoted.push({"value": 100 - demoted[0].value - demoted[1].value - demoted[2].value, color: "#878787", text: "Miss"})
-    d3.cumsum([0].concat(demoted.slice(0, 3)), elem => elem.value)
-        .forEach((elem, i) => {demoted[i].x = elem;})
     shotbars.push(demoted)
 
     if (demote == 0){
@@ -157,6 +149,14 @@ function draw() {
     d3.selectAll("svg")
         .data(shotbars)
         .join("svg")
+        .each((outer) => {
+            xIter = d3
+                .cumsum([0].concat(outer.slice(0, 3).map((x) => x.value)))
+                .values();
+            for (inner of outer) {
+                inner.x = xIter.next().value;
+            }
+        })
         .selectAll("rect")
         .data(d => d)
         .join("rect")
