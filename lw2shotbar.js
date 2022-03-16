@@ -1,8 +1,11 @@
 window.onload = function () {
-    document.querySelectorAll(".input").forEach((elem) => {
-        addEventListener("change", draw);
-    });
-    window.addEventListener("resize", draw);
+    d3.selectAll(".input").on("change", draw);
+    d3.select(window).on("resize", draw);
+
+    d3.select("body")
+        .append("div")
+        .attr("id", "tooltip")
+        .attr("style", "position: absolute; transform: translate(-50%, -100%)");
 
     draw();
 };
@@ -12,26 +15,20 @@ function clamp(x){
 }
 
 function draw() {
-    var breakdownDiv = document.getElementById("breakdown")
-    breakdownDiv.innerHTML = ""
+    var breakdownDiv = d3.select("#breakdown").node();
+    breakdownDiv.innerHTML = "";
     var widthRatio = 0.6;
     var dims = {
         "x": breakdownDiv.getClientRects()[0].width*(1- widthRatio)/2,
         "width": breakdownDiv.getClientRects()[0].width*widthRatio/100,
         "height": "1.2em",
     };
-    d3.select("#breakdown")
-        .append("div")
-        .attr("id", "tooltip")
-        .attr("style", "position: absolute; left: 0; top: 0; transform: translate(-50%, -100%)");
-
 
     // Inputs
-    aim = clamp(parseInt(document.getElementById("input-aim").value));
-    crit = parseInt(document.getElementById("input-crit").value);
-    dodge = parseInt(document.getElementById("input-dodge").value);
-    grazeband = parseInt(document.getElementById("input-grazeband").value);
-
+    aim = parseInt(d3.select("#input-aim").property("value"));
+    crit = parseInt(d3.select("#input-crit").property("value"));
+    dodge = parseInt(d3.select("#input-dodge").property("value"));
+    grazeband = parseInt(d3.select("#input-grazeband").property("value"));
 
     shotbars = [];
 
