@@ -1,12 +1,16 @@
+body {
+    background-color: white;
+    text-align: center;
+}
+
 .input {
     width: 4em;
 }
 
-p {
-    text-align: center;
+#output {
+    font-size: 1.5em;
 }
 
-ui {
-    display: list-item;
-    list-style-type: square;
+#output span {
+    padding: 1em;
 }
