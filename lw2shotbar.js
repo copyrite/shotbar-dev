@@ -66,8 +66,7 @@ function draw() {
     breakdownDiv.innerHTML = "";
     var widthRatio = 0.6;
     var dims = {
-        x: (breakdownDiv.getClientRects()[0].width * (1 - widthRatio)) / 2,
-        width: (breakdownDiv.getClientRects()[0].width * widthRatio) / 100,
+        width: breakdownDiv.getClientRects()[0].width * widthRatio,
         singleHeightPx: 16,
         doubleHeightPx: 4 * 16,
     };
@@ -336,7 +335,7 @@ function draw() {
         .data(breakdown)
         .join("div")
         .append("svg")
-        .attr("width", "100%")
+        .attr("width", dims.width)
         .attr("height", (d, i) => {
             if (d.old.length == 0) {
                 return dims.singleHeightPx;
@@ -367,9 +366,9 @@ function draw() {
         .selectAll("g")
         .data((d) => d)
         .join("rect")
-        .attr("x", (d) => dims.x + d.x * dims.width)
+        .attr("x", (d) => (d.x * dims.width) / 100)
         .attr("y", 0)
-        .attr("width", (d) => d.value * dims.width)
+        .attr("width", (d) => (d.value * dims.width) / 100)
         .attr("height", dims.singleHeightPx)
         .attr("rx", 2)
         .attr("ry", 2)
@@ -414,9 +413,9 @@ function draw() {
         .selectAll("g")
         .data((d) => d)
         .join("rect")
-        .attr("x", (d) => dims.x + d.x * dims.width)
+        .attr("x", (d) => (d.x * dims.width) / 100)
         .attr("y", (d) => d.y)
-        .attr("width", (d) => d.value * dims.width)
+        .attr("width", (d) => (d.value * dims.width) / 100)
         .attr("height", dims.singleHeightPx)
         .attr("rx", 2)
         .attr("ry", 2)
@@ -462,13 +461,13 @@ function draw() {
         .attr(
             "d",
             (d) =>
-                `M ${dims.x + (d.to.x + d.to.value / 2) * dims.width} ${
+                `M ${((d.to.x + d.to.value / 2) * dims.width) / 100} ${
                     dims.doubleHeightPx - dims.singleHeightPx
-                } C ${dims.x + (d.to.x + d.to.value / 2) * dims.width} ${
+                } C ${((d.to.x + d.to.value / 2) * dims.width) / 100} ${
                     0.5 * dims.doubleHeightPx
-                } , ${dims.x + (d.from.x + d.from.value / 2) * dims.width} ${
+                } , ${((d.from.x + d.from.value / 2) * dims.width) / 100} ${
                     0.5 * dims.doubleHeightPx
-                } , ${dims.x + (d.from.x + d.from.value / 2) * dims.width} ${
+                } , ${((d.from.x + d.from.value / 2) * dims.width) / 100} ${
                     dims.singleHeightPx
                 }`
         )
