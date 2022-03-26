@@ -316,7 +316,8 @@ function draw() {
         .data(breakdown)
         .join("div")
         .append("span")
-        .text((d) => d.text);
+        .text((d) => d.text)
+        .append("br");
 
     // SVGs
     d3.select("#breakdown")
