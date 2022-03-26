@@ -310,26 +310,15 @@ function draw() {
         { from: demotedAtoms[6], to: breakdown.at(-1).new[3] },
     ];
 
-    breakdown.forEach((outer) => {
-        outer.new.forEach((e, i) => {
-            e.color = colors.array[i];
-            e.text = hitRanks.array[i];
-        });
-
-        outer.old.length > 0
-            ? outer.new.forEach(
-                  (inner) =>
-                      (inner.y = dims.doubleHeightPx - dims.singleHeightPx)
-              )
-            : 0;
-    });
-
+    // Help texts
     d3.select("#breakdown")
         .selectAll("div")
         .data(breakdown)
         .join("div")
         .append("span")
         .text((d) => d.text);
+
+    // SVGs
     d3.select("#breakdown")
         .selectAll("div")
         .data(breakdown)
@@ -350,25 +339,36 @@ function draw() {
         })
         .style("padding", "1em 0");
 
-    // Olds
+    // SVG rects
     d3.select("#breakdown")
         .selectAll("svg")
-        .data(breakdown.map((d) => d.old))
+        .data(breakdown.map((d) => d))
         .each((outer) => {
-            lefts =
-                outer.length == 0
-                    ? outer
-                    : (xIter = d3.cumsum(
-                          [0].concat(outer.slice(0, -1).map((x) => x.value))
-                      ));
-            outer.forEach((inner, i) => (inner.x = lefts[i]));
+            setLeftCoords(outer.old);
+            setLeftCoords(outer.new);
+            outer.old.forEach((e) => (e.y = 0));
+            outer.new.forEach((e, i) => {
+                e.color = colors.array[i];
+                e.text = hitRanks.array[i];
+                outer.old.length > 0
+                    ? outer.new.forEach(
+                          (inner) =>
+                              (inner.y =
+                                  dims.doubleHeightPx - dims.singleHeightPx)
+                      )
+                    : 0;
+            });
+            outer.old.concat(outer.new).forEach((e) => {
+                e.x = (e.x * dims.width) / 100;
+                e.width = (e.value * dims.width) / 100;
+            });
         })
         .selectAll("g")
-        .data((d) => d)
+        .data((d) => d.new.concat(d.old))
         .join("rect")
-        .attr("x", (d) => (d.x * dims.width) / 100)
-        .attr("y", 0)
-        .attr("width", (d) => (d.value * dims.width) / 100)
+        .attr("x", (d) => d.x)
+        .attr("y", (d) => d.y)
+        .attr("width", (d) => d.width)
         .attr("height", dims.singleHeightPx)
         .attr("rx", 2)
         .attr("ry", 2)
@@ -405,52 +405,6 @@ function draw() {
                 .html(event.target.getAttribute("tooltip"));
         });
 
-    // News
-    d3.select("#breakdown")
-        .selectAll("svg")
-        .data(breakdown.map((d) => d.new))
-        .each(setLeftCoords)
-        .selectAll("g")
-        .data((d) => d)
-        .join("rect")
-        .attr("x", (d) => (d.x * dims.width) / 100)
-        .attr("y", (d) => d.y)
-        .attr("width", (d) => (d.value * dims.width) / 100)
-        .attr("height", dims.singleHeightPx)
-        .attr("rx", 2)
-        .attr("ry", 2)
-        .attr("fill", (d) => d.color)
-        .attr(
-            "tooltip",
-            (d) =>
-                `<span style="font-size: 1.5em">${decFormat(
-                    d.value
-                )}%</span><br>${d.text}`
-        )
-        .on("mouseleave", (event) => {
-            d3.select("#tooltip").style("display", "none");
-        })
-        .on("mouseover", (event) => {
-            d3.select("#tooltip")
-                .style("display", "block")
-                .style(
-                    "left",
-                    event.target.getScreenCTM().e +
-                        window.pageXOffset +
-                        event.target.x.animVal.value +
-                        event.target.width.animVal.value / 2 +
-                        "px"
-                )
-                .style(
-                    "top",
-                    event.target.getScreenCTM().f +
-                        window.pageYOffset +
-                        event.target.y.animVal.value +
-                        "px"
-                )
-                .html(event.target.getAttribute("tooltip"));
-        });
-
     // Links
     d3.select("#breakdown")
         .selectAll("svg")
@@ -461,15 +415,13 @@ function draw() {
         .attr(
             "d",
             (d) =>
-                `M ${((d.to.x + d.to.value / 2) * dims.width) / 100} ${
+                `M ${d.to.x + d.to.width / 2} ${
                     dims.doubleHeightPx - dims.singleHeightPx
-                } C ${((d.to.x + d.to.value / 2) * dims.width) / 100} ${
-                    0.5 * dims.doubleHeightPx
-                } , ${((d.from.x + d.from.value / 2) * dims.width) / 100} ${
-                    0.5 * dims.doubleHeightPx
-                } , ${((d.from.x + d.from.value / 2) * dims.width) / 100} ${
-                    dims.singleHeightPx
-                }`
+                } C ${d.to.x + d.to.width / 2} ${0.5 * dims.doubleHeightPx} , ${
+                    d.from.x + d.from.width / 2
+                } ${0.5 * dims.doubleHeightPx} , ${
+                    d.from.x + d.from.width / 2
+                } ${dims.singleHeightPx}`
         )
         .attr("stroke", "#C0C0C0")
         .attr("stroke-width", 2)
