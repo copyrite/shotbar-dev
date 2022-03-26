@@ -16,12 +16,19 @@ window.onload = function () {
         miss: "#808080",
         blendRatio: 0.33,
     };
+    colors.array = [colors.crit, colors.hit, colors.graze, colors.miss];
     hitRanks = {
         crit: "Crit",
         hit: "Normal hit",
         graze: "Graze",
         miss: "Miss",
     };
+    hitRanks.array = [
+        hitRanks.crit,
+        hitRanks.hit,
+        hitRanks.graze,
+        hitRanks.miss,
+    ];
 
     intFormat = d3.format(".0f");
     decFormat = d3.format(".1f");
@@ -305,11 +312,9 @@ function draw() {
     ];
 
     breakdown.forEach((outer) => {
-        col = [colors.crit, colors.hit, colors.graze, colors.miss];
-        hr = [hitRanks.crit, hitRanks.hit, hitRanks.graze, hitRanks.miss];
         outer.new.forEach((e, i) => {
-            e.color = col[i];
-            e.text = hr[i];
+            e.color = colors.array[i];
+            e.text = hitRanks.array[i];
         });
 
         outer.old.length > 0
