@@ -485,5 +485,8 @@ function draw() {
         .selectAll("span")
         .data(breakdown.at(-1).new)
         .join("span")
-        .text((d) => `${d.text}: ${decFormat(d.value)}%`);
+        .text((d) => `${d.text}: ${decFormat(d.value)}%`)
+        .style("text-decoration", "underline")
+        .style("text-decoration-color", (d) => d.color)
+        .style("text-decoration-thickness", "0.12em");
 }
