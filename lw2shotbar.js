@@ -19,6 +19,7 @@ window.onload = function () {
     d3.select(window).on("resize", draw);
 
     d3.select("body")
+        .html("")
         .append("div")
         .attr("id", "input")
         .append("p")
