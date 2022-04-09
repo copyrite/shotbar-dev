@@ -321,16 +321,6 @@ function draw() {
         .text((d) => d.text)
         .append("br");
 
-    // Text
-    d3.select("#output")
-        .selectAll("span")
-        .data(hitRankArray)
-        .join("span")
-        .text((d) => `${hitRankFriendlyNames[d]}: ${decFormat(demoted[d])}%`)
-        .style("text-decoration", "underline")
-        .style("text-decoration-color", (d) => hitRankColors[d])
-        .style("text-decoration-thickness", "0.12em");
-
     // SVGs
     d3.select("#breakdown")
         .selectAll("div")
@@ -481,4 +471,14 @@ function draw() {
         .attr("stroke-linecap", "butt")
         .attr("fill", "transparent")
         .style("display", (d) => d.display);
+
+    // Text
+    d3.select("#output")
+        .selectAll("span")
+        .data(hitRankArray)
+        .join("span")
+        .text((d) => `${hitRankFriendlyNames[d]}: ${decFormat(demoted[d])}%`)
+        .style("text-decoration", "underline")
+        .style("text-decoration-color", (d) => hitRankColors[d])
+        .style("text-decoration-thickness", "0.12em");
 }
