@@ -9,26 +9,19 @@ window.onload = function () {
         .style("transform", "translate(-50%, -100%)")
         .style("background-color", "inherit");
 
-    colors = {
+    hitRankArray = ["crit", "hit", "graze", "miss"];
+    hitRankColors = {
         crit: "#808000",
         hit: "#800000",
         graze: "#008000",
         miss: "#808080",
-        blendRatio: 0.33,
     };
-    colors.array = [colors.crit, colors.hit, colors.graze, colors.miss];
-    hitRanks = {
+    hitRankFriendlyNames = {
         crit: "Crit",
         hit: "Normal hit",
         graze: "Graze",
         miss: "Miss",
     };
-    hitRanks.array = [
-        hitRanks.crit,
-        hitRanks.hit,
-        hitRanks.graze,
-        hitRanks.miss,
-    ];
 
     intFormat = d3.format(".0f");
     decFormat = d3.format(".1f");
@@ -40,64 +33,94 @@ function clamp(x) {
     return Math.max(0, Math.min(100, x));
 }
 
+function modifyHitDistribution(hitDistribution, modifiers) {
+    let rtn = _.cloneDeep(hitDistribution);
+
+    let breakdown = { line1: {}, line2: {}, links: [] };
+
+    for (to of hitRankArray) {
+        breakdown.line1[to] = {};
+        breakdown.line1[to][to] = { value: hitDistribution[to] };
+    }
+
+    for (mod of modifiers) {
+        breakdown.line1[mod.from] ??= {};
+        breakdown.line1[mod.from][mod.to] ??= {};
+        breakdown.line1[mod.from][mod.to].value ??= mod.value;
+        breakdown.line1[mod.from][mod.to].text ??= mod.text;
+        breakdown.line1[mod.from][mod.to].color ??= mod.color;
+
+        if (mod.value > 0) {
+            rtn[mod.to] += mod.value;
+            rtn[mod.from] -= mod.value;
+            breakdown.line1[mod.from][mod.from].value -= mod.value;
+        }
+        if (mod.link) {
+            breakdown.links.push({ from: mod.from, to: mod.to });
+        }
+    }
+
+    for (to of hitRankArray) {
+        breakdown.line2[to] ??= {};
+        breakdown.line2[to].value ??= rtn[to];
+    }
+    rtn.breakdown.push(breakdown);
+
+    return rtn;
+}
+
 function makeInitialShotbar(aim) {
-    initial = {
+    let rtn = {
         crit: 0,
-        hit: aim,
+        hit: clamp(aim),
         graze: 0,
     };
-    initial.miss = 100 - initial.hit;
-    initial.breakdown = [
-        {
-            text: `The initial chance to normally hit is ${intFormat(
-                initial.hit
-            )}%, determined by Aim. The remainder is chance to miss.`,
-            old: [],
-            new: [
-                { value: initial.crit },
-                { value: initial.hit },
-                { value: initial.graze },
-                { value: initial.miss },
-            ],
-            links: [],
-        },
-    ];
-    return initial;
+    rtn.miss = 100 - rtn.hit;
+
+    let breakdown = {
+        text: `The initial chance to normally hit is ${intFormat(
+            rtn.hit
+        )}%, determined by Aim. The remainder is chance to miss.`,
+        line1: {},
+        line2: {},
+    };
+    for (rank of hitRankArray) {
+        breakdown.line1[rank] = {};
+        breakdown.line1[rank][rank] = { value: rtn[rank] };
+        breakdown.line2[rank] = { value: rtn[rank] };
+    }
+    rtn.breakdown = [breakdown];
+    return rtn;
 }
 
 function applyGrazeBand(grazeband) {
-    return (resultTable) => {
-        var halfBandwidth = Math.min(grazeband, initial.hit, initial.miss);
-        var bandedAtoms = [
-            {
-                value: initial.hit - halfBandwidth,
-                color: colors.hit,
-                text: `Remaining normal hit`,
-            },
-            {
-                value: halfBandwidth,
-                color: colorblend(colors.hit, colors.graze, colors.blendRatio),
-                text: `Graze band`,
-            },
-            {
-                value: halfBandwidth,
-                color: colorblend(colors.miss, colors.graze, colors.blendRatio),
-                text: `Graze band`,
-            },
-            {
-                value: initial.miss - halfBandwidth,
-                color: colors.miss,
-                text: `Remaining miss`,
-            },
-        ];
-        var banded = {
-            crit: 0,
-            hit: bandedAtoms[0].value,
-            graze: bandedAtoms[1].value + bandedAtoms[2].value,
-            miss: bandedAtoms[3].value,
-        };
+    return (hitDistribution) => {
+        let halfBandwidth = Math.min(
+            grazeband,
+            hitDistribution.hit,
+            hitDistribution.miss
+        );
 
-        var helpText = "";
+        let rtn = modifyHitDistribution(hitDistribution, [
+            {
+                from: "hit",
+                to: "graze",
+                value: halfBandwidth,
+                text: "Graze band",
+                link: true,
+            },
+            {
+                from: "miss",
+                to: "graze",
+                value: halfBandwidth,
+                text: "Graze band",
+                link: true,
+            },
+            { from: "hit", to: "hit", text: "Remaining normal hit" },
+            { from: "miss", to: "miss", text: "Remaining miss" },
+        ]);
+
+        let helpText;
         if (grazeband > 0) {
             if (halfBandwidth == 0) {
                 helpText = `Graze band would replace parts of normal hit chance and miss chance, but because ${
@@ -120,69 +143,45 @@ function applyGrazeBand(grazeband) {
             helpText =
                 "Graze band has been set to zero, so the shotbar won't be modified at this point.";
         }
+        _.last(rtn.breakdown).text = helpText;
 
-        breakdown = {
-            text: helpText,
-            old: bandedAtoms,
-            new: [
-                { value: banded.crit },
-                { value: banded.hit },
-                { value: banded.graze },
-                { value: banded.miss },
-            ],
-        };
-        breakdown.links = [
-            { from: bandedAtoms[1], to: breakdown.new[2] },
-            { from: bandedAtoms[2], to: breakdown.new[2] },
-        ];
-
-        return {
-            crit: banded.crit,
-            hit: banded.hit,
-            graze: banded.graze,
-            miss: banded.miss,
-            breakdown: resultTable.breakdown.concat([breakdown]),
-        };
+        return rtn;
     };
 }
 
 function applyHitPromotion(promoteChance) {
-    return (resultTable) => {
-        var promotedAtoms = [
+    return (hitDistribution) => {
+        let rtn = modifyHitDistribution(hitDistribution, [
             {
-                value: (promoteChance * resultTable.hit) / 100,
-                color: colorblend(colors.hit, colors.crit, colors.blendRatio),
+                from: "hit",
+                to: "crit",
+                value: (promoteChance * hitDistribution.hit) / 100,
                 text: `${decFormat(promoteChance)}% of normal hit`,
+                link: true,
             },
             {
-                value: ((100 - promoteChance) * resultTable.hit) / 100,
-                color: colors.hit,
+                from: "hit",
+                to: "hit",
                 text: `${decFormat(100 - promoteChance)}% of normal hit`,
+                link: true,
             },
             {
-                value: (promoteChance * resultTable.graze) / 100,
-                color: colorblend(colors.graze, colors.hit, colors.blendRatio),
+                from: "graze",
+                to: "hit",
+                value: (promoteChance * hitDistribution.graze) / 100,
                 text: `${decFormat(promoteChance)}% of graze`,
+                link: true,
             },
             {
-                value: ((100 - promoteChance) * resultTable.graze) / 100,
-                color: colors.graze,
+                from: "graze",
+                to: "graze",
                 text: `${decFormat(100 - promoteChance)}% of graze`,
+                link: true,
             },
-            {
-                value: resultTable.miss,
-                color: colors.miss,
-                text: `Miss`,
-            },
-        ];
-        promoted = {
-            crit: promotedAtoms[0].value,
-            hit: promotedAtoms[1].value + promotedAtoms[2].value,
-            graze: promotedAtoms[3].value,
-            miss: promotedAtoms[4].value,
-        };
+        ]);
 
-        if (promoted.miss == 100) {
+        let helpText;
+        if (rtn.miss == 100) {
             helpText =
                 "Hit promotion would be applied here, but there is no chance to hit.";
         } else if (promoteChance == 0) {
@@ -199,74 +198,58 @@ function applyHitPromotion(promoteChance) {
                     : "negative Dodge"
             }. Normal hits can promote into crits and grazes into normal hits:`;
         }
-        breakdown = {
-            text: helpText,
-            old: promotedAtoms,
-            new: [
-                { value: promoted.crit },
-                { value: promoted.hit },
-                { value: promoted.graze },
-                { value: promoted.miss },
-            ],
-        };
-        breakdown.links = [
-            { from: promotedAtoms[0], to: breakdown.new[0] },
-            { from: promotedAtoms[1], to: breakdown.new[1] },
-            { from: promotedAtoms[2], to: breakdown.new[1] },
-            { from: promotedAtoms[3], to: breakdown.new[2] },
-        ];
+        _.last(rtn.breakdown).text = helpText;
 
-        return {
-            crit: promoted.crit,
-            hit: promoted.hit,
-            graze: promoted.graze,
-            miss: promoted.miss,
-            breakdown: resultTable.breakdown.concat([breakdown]),
-        };
+        return rtn;
     };
 }
-function applyHitDemotion(demoteChance) {
-    return (resultTable) => {
-        var demotedAtoms = [
-            {
-                value: (resultTable.crit * (100 - demoteChance)) / 100,
-                color: colors.crit,
-                text: `${decFormat(100 - demoteChance)}% of crit`,
-            },
-            {
-                value: (resultTable.crit * demoteChance) / 100,
-                color: colorblend(colors.crit, colors.hit, colors.blendRatio),
-                text: `${decFormat(demoteChance)}% of crit`,
-            },
-            {
-                value: (resultTable.hit * (100 - demoteChance)) / 100,
-                color: colors.hit,
-                text: `${decFormat(100 - demoteChance)}% of normal hit`,
-            },
-            {
-                value: (resultTable.hit * demoteChance) / 100,
-                color: colorblend(colors.hit, colors.graze, colors.blendRatio),
-                text: `${decFormat(demoteChance)}% of normal hit`,
-            },
-            {
-                value: (resultTable.graze * (100 - demoteChance)) / 100,
-                color: colors.graze,
-                text: `${decFormat(100 - demoteChance)}% of graze`,
-            },
-            {
-                value: (resultTable.graze * demoteChance) / 100,
-                color: colorblend(colors.graze, colors.miss, colors.blendRatio),
-                text: `${decFormat(demoteChance)}% of graze`,
-            },
-            { value: resultTable.miss, color: colors.miss, text: "Miss" },
-        ];
-        demoted = {
-            crit: demotedAtoms[0].value,
-            hit: demotedAtoms[1].value + demotedAtoms[2].value,
-            graze: demotedAtoms[3].value + demotedAtoms[4].value,
-            miss: demotedAtoms[5].value + demotedAtoms[6].value,
-        };
 
+function applyHitDemotion(demoteChance) {
+    return (hitDistribution) => {
+        let rtn = modifyHitDistribution(hitDistribution, [
+            {
+                from: "crit",
+                to: "crit",
+                text: `${decFormat(100 - demoteChance)}% of crit`,
+                link: true,
+            },
+            {
+                from: "crit",
+                to: "hit",
+                value: (hitDistribution.crit * demoteChance) / 100,
+                text: `${decFormat(demoteChance)}% of crit`,
+                link: true,
+            },
+            {
+                from: "hit",
+                to: "hit",
+                text: `${decFormat(100 - demoteChance)}% of normal hit`,
+                link: true,
+            },
+            {
+                from: "hit",
+                to: "graze",
+                value: (hitDistribution.hit * demoteChance) / 100,
+                text: `${decFormat(demoteChance)}% of normal hit`,
+                link: true,
+            },
+            {
+                from: "graze",
+                to: "graze",
+                text: `${decFormat(100 - demoteChance)}% of graze`,
+                link: true,
+            },
+            {
+                from: "graze",
+                to: "miss",
+                value: (hitDistribution.graze * demoteChance) / 100,
+                text: `${decFormat(demoteChance)}% of graze`,
+                link: true,
+            },
+            { from: "miss", to: "miss", link: true },
+        ]);
+
+        let helpText;
         if (promoted.miss == 100) {
             helpText =
                 "Hit demotion would be applied here, but there is no chance to hit.";
@@ -278,40 +261,15 @@ function applyHitDemotion(demoteChance) {
                 demoteChance
             )}% chance, determined by Dodge. Crits are demoted into normal hits, normal hits into grazes, and grazes into misses.`;
         }
+        _.last(rtn.breakdown).text = helpText;
 
-        breakdown = {
-            text: helpText,
-            old: demotedAtoms,
-            new: [
-                { value: demoted.crit },
-                { value: demoted.hit },
-                { value: demoted.graze },
-                { value: demoted.miss },
-            ],
-        };
-        breakdown.links = [
-            { from: demotedAtoms[0], to: breakdown.new[0] },
-            { from: demotedAtoms[1], to: breakdown.new[1] },
-            { from: demotedAtoms[2], to: breakdown.new[1] },
-            { from: demotedAtoms[3], to: breakdown.new[2] },
-            { from: demotedAtoms[4], to: breakdown.new[2] },
-            { from: demotedAtoms[5], to: breakdown.new[3] },
-            { from: demotedAtoms[6], to: breakdown.new[3] },
-        ];
-
-        return {
-            crit: demoted.crit,
-            hit: demoted.hit,
-            graze: demoted.graze,
-            miss: demoted.miss,
-            breakdown: resultTable.breakdown.concat([breakdown]),
-        };
+        return rtn;
     };
 }
 
 function colorblend(left, right, lambda) {
-    lcol = d3.color(left);
-    rcol = d3.color(right);
+    let lcol = d3.color(left);
+    let rcol = d3.color(right);
     return d3.rgb(
         (1 - lambda) * lcol.r + lambda * rcol.r,
         (1 - lambda) * lcol.g + lambda * rcol.g,
@@ -321,7 +279,7 @@ function colorblend(left, right, lambda) {
 }
 
 function setLeftCoords(array) {
-    lefts =
+    let lefts =
         array.length == 0
             ? array
             : (xIter = d3.cumsum(
@@ -331,10 +289,10 @@ function setLeftCoords(array) {
 }
 
 function draw() {
-    var breakdownDiv = d3.select("#breakdown").node();
+    let breakdownDiv = d3.select("#breakdown").node();
     breakdownDiv.innerHTML = "";
-    var widthRatio = 0.6;
-    var dims = {
+    let widthRatio = 0.6;
+    let dims = {
         width: breakdownDiv.getClientRects()[0].width * widthRatio,
         singleHeightPx: 16,
         doubleHeightPx: 4 * 16,
@@ -346,8 +304,8 @@ function draw() {
     dodge = parseInt(d3.select("#input-dodge").property("value"));
     grazeband = parseInt(d3.select("#input-grazeband").property("value"));
 
-    var promoteChance = Math.min(crit - Math.min(0, dodge), 100); // Negative dodge is additional crit
-    var demoteChance = Math.min(Math.max(dodge, 0), 100);
+    let promoteChance = Math.min(crit - Math.min(0, dodge), 100); // Negative dodge is additional crit
+    let demoteChance = Math.min(Math.max(dodge, 0), 100);
 
     initial = makeInitialShotbar(aim);
     banded = applyGrazeBand(grazeband)(initial);
@@ -363,6 +321,16 @@ function draw() {
         .text((d) => d.text)
         .append("br");
 
+    // Text
+    d3.select("#output")
+        .selectAll("span")
+        .data(hitRankArray)
+        .join("span")
+        .text((d) => `${hitRankFriendlyNames[d]}: ${decFormat(demoted[d])}%`)
+        .style("text-decoration", "underline")
+        .style("text-decoration-color", (d) => hitRankColors[d])
+        .style("text-decoration-thickness", "0.12em");
+
     // SVGs
     d3.select("#breakdown")
         .selectAll("div")
@@ -371,15 +339,16 @@ function draw() {
         .append("svg")
         .attr("width", dims.width)
         .attr("height", (d, i) => {
-            if (d.old.length == 0) {
+            if (!Boolean(d.links)) {
                 return dims.singleHeightPx;
             } else if (
-                d.new
-                    .map(
-                        (e, j) =>
-                            e.value - demoted.breakdown[i - 1].new[j].value
+                demoted.breakdown[i - 1] != undefined &&
+                _.isEqual(
+                    hitRankArray.map((e) => d.line2[e].value),
+                    hitRankArray.map(
+                        (e) => demoted.breakdown[i - 1].line2[e].value
                     )
-                    .every((e) => Math.abs(e) <= 0.000001)
+                )
             ) {
                 return 0;
             }
@@ -390,34 +359,46 @@ function draw() {
     // SVG rects
     d3.select("#breakdown")
         .selectAll("svg")
-        .data(demoted.breakdown.map((d) => d))
-        .each((outer) => {
-            setLeftCoords(outer.old);
-            setLeftCoords(outer.new);
-            outer.old.forEach((e) => (e.y = 0));
-            outer.new.forEach((e, i) => {
-                e.color = colors.array[i];
-                e.text = hitRanks.array[i];
-                outer.old.length > 0
-                    ? outer.new.forEach(
-                          (inner) =>
-                              (inner.y =
-                                  dims.doubleHeightPx - dims.singleHeightPx)
-                      )
-                    : 0;
-            });
-            outer.old.concat(outer.new).forEach((e) => {
+        .data(demoted.breakdown)
+        .selectAll("g")
+        .data((d) => {
+            let line1 = [];
+            let line2 = [];
+            for (to of hitRankArray) {
+                for (from of hitRankArray) {
+                    rect = d.line1[from][to];
+                    if (rect != undefined) {
+                        rect.y = 0;
+                        rect.height = dims.singleHeightPx;
+                        rect.text ??= hitRankFriendlyNames[to];
+                        rect.color ??= colorblend(
+                            hitRankColors[from],
+                            hitRankColors[to],
+                            0.33
+                        );
+                        line1.push(rect);
+                    }
+                }
+                rect = d.line2[to];
+                rect.y = dims.doubleHeightPx - dims.singleHeightPx;
+                rect.height = dims.singleHeightPx;
+                rect.text = hitRankFriendlyNames[to];
+                rect.color = hitRankColors[to];
+                line2.push(rect);
+            }
+            setLeftCoords(line1);
+            setLeftCoords(line2);
+            line1.concat(line2).forEach((e) => {
                 e.x = (e.x * dims.width) / 100;
                 e.width = (e.value * dims.width) / 100;
             });
+            return line1.concat(line2);
         })
-        .selectAll("g")
-        .data((d) => d.new.concat(d.old))
         .join("rect")
         .attr("x", (d) => d.x)
         .attr("y", (d) => d.y)
         .attr("width", (d) => d.width)
-        .attr("height", dims.singleHeightPx)
+        .attr("height", (d) => d.height)
         .attr("rx", 2)
         .attr("ry", 2)
         .attr("fill", (d) => d.color)
@@ -456,37 +437,48 @@ function draw() {
     // Links
     d3.select("#breakdown")
         .selectAll("svg")
-        .data(demoted.breakdown.map((d) => d.links))
+        .data(demoted.breakdown)
         .selectAll("g")
-        .data((d) => d)
+        .data((d) => {
+            if (d.links == undefined) {
+                return [];
+            }
+            rtn = [];
+            for (link of d.links) {
+                rtn.push({
+                    x1:
+                        d.line1[link.from][link.to].x +
+                        d.line1[link.from][link.to].width / 2,
+                    y1:
+                        d.line1[link.from][link.to].y +
+                        d.line1[link.from][link.to].height,
+                    x2: d.line2[link.to].x + d.line2[link.to].width / 2,
+                    y2: d.line2[link.to].y,
+
+                    display:
+                        d.line1[link.from][link.to].value > 0 &&
+                        d.line2[link.to].value > 0
+                            ? ""
+                            : "none",
+                });
+            }
+            return rtn;
+        })
         .join("path")
         .attr(
             "d",
             (d) =>
-                `M ${d.to.x + d.to.width / 2} ${
-                    dims.doubleHeightPx - dims.singleHeightPx
-                } C ${d.to.x + d.to.width / 2} ${0.5 * dims.doubleHeightPx} , ${
-                    d.from.x + d.from.width / 2
-                } ${0.5 * dims.doubleHeightPx} , ${
-                    d.from.x + d.from.width / 2
-                } ${dims.singleHeightPx}`
+                `
+                M ${d.x2} ${d.y2}
+                C ${d.x2} ${(d.y1 + d.y2) / 2}
+                , ${d.x1} ${(d.y1 + d.y2) / 2}
+                , ${d.x1} ${d.y1}
+                `
         )
         .attr("stroke", "#C0C0C0")
         .attr("stroke-width", 2)
         .attr("stroke-dasharray", 4)
         .attr("stroke-linecap", "butt")
         .attr("fill", "transparent")
-        .style("display", (d) =>
-            d.from.value > 0 && d.to.value > 0 ? "" : "none"
-        );
-
-    // Text
-    d3.select("#output")
-        .selectAll("span")
-        .data(demoted.breakdown.at(-1).new)
-        .join("span")
-        .text((d) => `${d.text}: ${decFormat(d.value)}%`)
-        .style("text-decoration", "underline")
-        .style("text-decoration-color", (d) => d.color)
-        .style("text-decoration-thickness", "0.12em");
+        .style("display", (d) => d.display);
 }
