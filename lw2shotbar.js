@@ -1,14 +1,4 @@
 window.onload = function () {
-    d3.selectAll(".input").on("change", draw);
-    d3.select(window).on("resize", draw);
-
-    d3.select("body")
-        .append("div")
-        .attr("id", "tooltip")
-        .style("position", "absolute")
-        .style("transform", "translate(-50%, -100%)")
-        .style("background-color", "inherit");
-
     hitRankArray = ["crit", "hit", "graze", "miss"];
     hitRankColors = {
         crit: "#808000",
@@ -25,6 +15,38 @@ window.onload = function () {
 
     intFormat = d3.format(".0f");
     decFormat = d3.format(".1f");
+
+    d3.select(window).on("resize", draw);
+
+    d3.select("body")
+        .append("div")
+        .attr("id", "input")
+        .append("p")
+        .selectAll("input")
+        .data([
+            { min: 0, max: 100, value: 65, text: "Aim" },
+            { min: 0, max: 100, value: 65, text: "Crit" },
+            { min: 0, max: 100, value: 65, text: "Dodge" },
+            { min: 0, max: 100, value: 10, text: "Graze band" },
+        ])
+        .join("span")
+        .text((d) => d.text)
+        .append("input")
+        .attr("type", "number")
+        .attr("id", (d) => "input-" + d.text.replace(" ", "").toLowerCase())
+        .attr("min", (d) => d.min)
+        .attr("max", (d) => d.max)
+        .attr("value", (d) => d.value)
+        .on("change", draw);
+    d3.select("body").append("div").attr("id", "breakdown");
+    d3.select("body").append("div").attr("id", "output");
+
+    d3.select("body")
+        .append("div")
+        .attr("id", "tooltip")
+        .style("position", "absolute")
+        .style("transform", "translate(-50%, -100%)")
+        .style("background-color", "inherit");
 
     draw();
 };

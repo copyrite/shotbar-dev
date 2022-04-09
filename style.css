@@ -3,8 +3,9 @@ body {
     text-align: center;
 }
 
-.input {
+input {
     width: 4em;
+    margin: 0 0.5em;
 }
 
 #output {
