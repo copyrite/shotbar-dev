@@ -1,10 +1,10 @@
 window.onload = function () {
     hitRankArray = ["crit", "hit", "graze", "miss"];
     hitRankColors = {
-        crit: "#808000",
-        hit: "#800000",
-        graze: "#008000",
-        miss: "#808080",
+        crit: "#95791b",
+        hit: "#72141c",
+        graze: "#468652",
+        miss: "#5c6060",
     };
     hitRankFriendlyNames = {
         crit: "Crit",
@@ -26,8 +26,8 @@ window.onload = function () {
         .selectAll("input")
         .data([
             { min: 0, max: 100, value: 65, text: "Aim" },
-            { min: 0, max: 100, value: 65, text: "Crit" },
-            { min: 0, max: 100, value: 65, text: "Dodge" },
+            { min: 0, max: 100, value: 0, text: "Crit" },
+            { min: 0, max: 100, value: 0, text: "Dodge" },
             { min: 0, max: 100, value: 10, text: "Graze band" },
         ])
         .join("span")
@@ -47,7 +47,8 @@ window.onload = function () {
         .attr("id", "tooltip")
         .style("position", "absolute")
         .style("transform", "translate(-50%, -100%)")
-        .style("background-color", "inherit");
+        .style("padding", "0.5em")
+        .style("display", "none");
 
     draw();
 };
@@ -387,7 +388,7 @@ function draw() {
                         rect.color ??= colorblend(
                             hitRankColors[from],
                             hitRankColors[to],
-                            0.33
+                            0.2
                         );
                         line1.push(rect);
                     }
@@ -415,15 +416,10 @@ function draw() {
         .attr("rx", 2)
         .attr("ry", 2)
         .attr("fill", (d) => d.color)
-        .attr(
-            "tooltip",
-            (d) =>
-                `<span style="font-size: 1.5em">${decFormat(
-                    d.value
-                )}%</span><br>${d.text}`
-        )
+        .attr("bigtext", (d) => decFormat(d.value) + "%")
+        .attr("smalltext", (d) => d.text)
         .on("mouseleave", (event) => {
-            d3.select("#tooltip").style("display", "none");
+            d3.select("#tooltip").style("display", "none").html("");
         })
         .on("mouseover", (event) => {
             d3.select("#tooltip")
@@ -441,10 +437,62 @@ function draw() {
                     "top",
                     event.target.getScreenCTM().f +
                         window.pageYOffset +
-                        event.target.y.animVal.value +
+                        event.target.y.animVal.value -
+                        1 +
                         "px"
                 )
-                .html(event.target.getAttribute("tooltip"));
+                .html("");
+
+            d3.select("#tooltip")
+                .append("span")
+                .style("font-size", "1.5em")
+                .text(event.target.getAttribute("bigtext"))
+                .append("br");
+            d3.select("#tooltip")
+                .append("span")
+                .text(event.target.getAttribute("smalltext"));
+
+            let node = d3.select("#tooltip").node();
+            let style = getComputedStyle(node);
+            let x0 = 0;
+            let x1 = parseInt(style.paddingLeft) * 0.5;
+            let x2 = parseInt(style.paddingLeft) * 1.5;
+            let x3 = node.offsetWidth - parseInt(style.paddingRight) * 1.5;
+            let x4 = node.offsetWidth - parseInt(style.paddingRight) * 0.5;
+            let x5 = node.offsetWidth;
+            let y0 = 0;
+            let y1 = parseInt(style.paddingTop) * 0.5;
+            let y2 = parseInt(style.paddingTop) * 1.5;
+            let y3 = node.offsetHeight - parseInt(style.paddingBottom) * 1.5;
+            let y4 = node.offsetHeight - parseInt(style.paddingBottom) * 0.5;
+            let y5 = node.offsetHeight;
+
+            d3.select("#tooltip")
+                .insert("svg")
+                .style("position", "absolute")
+                .style("z-index", "-1")
+                .style("left", -2 + "px")
+                .style("top", -2 + "px")
+                .attr("width", x5 + 4)
+                .attr("height", y5 + 4)
+                .insert("polygon")
+                .attr(
+                    "points",
+                    `
+                    ${x0}, ${y4}
+                    ${x0}, ${y2}
+                    ${x2}, ${y0}
+                    ${x4}, ${y0}
+                    ${x5}, ${y1}
+                    ${x5}, ${y3}
+                    ${x3}, ${y5}
+                    ${x1}, ${y5}
+                    `
+                )
+                .attr("fill", "#040302DE")
+                .attr("transform", "translate(2, 2)")
+                .attr("stroke", "#98c8c8")
+                .attr("stroke-width", 2);
         });
 
     // Links
@@ -488,7 +536,7 @@ function draw() {
                 , ${d.x1} ${d.y1}
                 `
         )
-        .attr("stroke", "#C0C0C0")
+        .attr("stroke", "#98c8c8")
         .attr("stroke-width", 2)
         .attr("stroke-dasharray", 4)
         .attr("stroke-linecap", "butt")

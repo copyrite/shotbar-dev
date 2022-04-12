@@ -1,11 +1,16 @@
 body {
-    background-color: white;
+    background-color: #040302;
+    color: #98c8c8;
     text-align: center;
 }
 
 input {
     width: 4em;
     margin: 0 0.5em;
+}
+
+#breakdown svg {
+    box-sizing: content-box;
 }
 
 #output {
