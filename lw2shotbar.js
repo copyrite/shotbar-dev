@@ -23,14 +23,14 @@ window.onload = function () {
         .append("div")
         .attr("id", "input")
         .append("p")
-        .selectAll("input")
+        .selectAll("div")
         .data([
             { min: 0, max: 100, value: 65, text: "Aim" },
             { min: 0, max: 100, value: 0, text: "Crit" },
             { min: 0, max: 100, value: 0, text: "Dodge" },
             { min: 0, max: 100, value: 10, text: "Graze band" },
         ])
-        .join("span")
+        .join("div")
         .text((d) => d.text)
         .append("input")
         .attr("type", "number")
@@ -545,9 +545,9 @@ function draw() {
 
     // Text
     d3.select("#output")
-        .selectAll("span")
+        .selectAll("div")
         .data(hitRankArray)
-        .join("span")
+        .join("div")
         .text((d) => `${hitRankFriendlyNames[d]}: ${decFormat(demoted[d])}%`)
         .style("text-decoration", "underline")
         .style("text-decoration-color", (d) => hitRankColors[d])

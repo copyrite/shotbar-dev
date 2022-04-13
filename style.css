@@ -4,9 +4,32 @@ body {
     text-align: center;
 }
 
+#input div {
+    display: inline-block;
+}
+
 input {
     width: 4em;
     margin: 0 0.5em;
+}
+
+@media screen and (max-width: 800px) {
+    #input div {
+        max-width: 300px;
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+        left: 50%;
+        transform: translate(-50%, 0);
+    }
+
+    input {
+        margin: 0;
+    }
+
+    #output div {
+        width: 90%;
+    }
 }
 
 #breakdown svg {
@@ -17,6 +40,7 @@ input {
     font-size: 1.5em;
 }
 
-#output span {
+#output div {
+    display: inline-block;
     padding: 0 1em;
 }
