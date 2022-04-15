@@ -22,6 +22,7 @@ window.onload = function () {
         .html("")
         .append("div")
         .attr("id", "input")
+        .attr("class", "fancy-shape")
         .append("p")
         .selectAll("div")
         .data([
@@ -40,11 +41,15 @@ window.onload = function () {
         .attr("value", (d) => d.value)
         .on("change", draw);
     d3.select("body").append("div").attr("id", "breakdown");
-    d3.select("body").append("div").attr("id", "output");
+    d3.select("body")
+        .append("div")
+        .attr("id", "output")
+        .attr("class", "fancy-shape");
 
     d3.select("body")
         .append("div")
         .attr("id", "tooltip")
+        .attr("class", "fancy-shape")
         .style("position", "absolute")
         .style("transform", "translate(-50%, -100%)")
         .style("padding", "0.5em")
@@ -341,7 +346,8 @@ function draw() {
         .selectAll("div")
         .data(demoted.breakdown)
         .join("div")
-        .append("span")
+        .attr("class", "fancy-shape")
+        .append("p")
         .text((d) => d.text)
         .append("br");
 
@@ -451,48 +457,6 @@ function draw() {
             d3.select("#tooltip")
                 .append("span")
                 .text(event.target.getAttribute("smalltext"));
-
-            let node = d3.select("#tooltip").node();
-            let style = getComputedStyle(node);
-            let x0 = 0;
-            let x1 = parseInt(style.paddingLeft) * 0.5;
-            let x2 = parseInt(style.paddingLeft) * 1.5;
-            let x3 = node.offsetWidth - parseInt(style.paddingRight) * 1.5;
-            let x4 = node.offsetWidth - parseInt(style.paddingRight) * 0.5;
-            let x5 = node.offsetWidth;
-            let y0 = 0;
-            let y1 = parseInt(style.paddingTop) * 0.5;
-            let y2 = parseInt(style.paddingTop) * 1.5;
-            let y3 = node.offsetHeight - parseInt(style.paddingBottom) * 1.5;
-            let y4 = node.offsetHeight - parseInt(style.paddingBottom) * 0.5;
-            let y5 = node.offsetHeight;
-
-            d3.select("#tooltip")
-                .insert("svg")
-                .style("position", "absolute")
-                .style("z-index", "-1")
-                .style("left", -2 + "px")
-                .style("top", -2 + "px")
-                .attr("width", x5 + 4)
-                .attr("height", y5 + 4)
-                .insert("polygon")
-                .attr(
-                    "points",
-                    `
-                    ${x0}, ${y4}
-                    ${x0}, ${y2}
-                    ${x2}, ${y0}
-                    ${x4}, ${y0}
-                    ${x5}, ${y1}
-                    ${x5}, ${y3}
-                    ${x3}, ${y5}
-                    ${x1}, ${y5}
-                    `
-                )
-                .attr("fill", "#040302DE")
-                .attr("transform", "translate(2, 2)")
-                .attr("stroke", "#98c8c8")
-                .attr("stroke-width", 2);
         });
 
     // Links
